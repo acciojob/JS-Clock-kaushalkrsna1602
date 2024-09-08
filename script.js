@@ -1,30 +1,41 @@
-//your code here
-// Select the clock hands
-const hourHand = document.querySelector('.hour-hand');
-const minuteHand = document.querySelector('.min-hand');
-const secondHand = document.querySelector('.second-hand');
-
-function setClock() {
+() => {
   const now = new Date();
-
-  // Get current hours, minutes, and seconds
   const seconds = now.getSeconds();
-  const minutes = now.getMinutes();
-  const hours = now.getHours();
+  const mins = now.getMinutes();
+  const minsDegrees = 6 * mins + 90; // Calculate the degree value
+  const radians = minsDegrees * Math.PI / 180; // Convert to radians
 
-  // Calculate degrees for each hand
-  const secondsDegrees = ((seconds / 60) * 360) + 90; // Add 90 to offset initial rotation
-  const minutesDegrees = ((minutes / 60) * 360) + ((seconds / 60) * 6) + 90;
-  const hoursDegrees = ((hours / 12) * 360) + ((minutes / 60) * 30) + 90;
+  // Build the rotation matrix
+  let a = Math.cos(radians);
+  let b = Math.sin(radians);
+  let c = -b;
+  let d = a;
+  let e = 0;
+  let f = 0;
 
-  // Apply the rotation to the hands
-  secondHand.style.transform = `rotate(${secondsDegrees}deg)`;
-  minuteHand.style.transform = `rotate(${minutesDegrees}deg)`;
-  hourHand.style.transform = `rotate(${hoursDegrees}deg)`;
+  // Round values to six decimal places
+  a = parseFloat(a.toFixed(6));
+  b = parseFloat(b.toFixed(6));
+  c = parseFloat(c.toFixed(6));
+  d = parseFloat(d.toFixed(6));
+  e = parseFloat(e.toFixed(6));
+  f = parseFloat(f.toFixed(6));
+
+  // Cypress custom command to assert approximate values
+  cy.get('.min-hand').should(($el) => {
+    const transform = $el.css('transform');
+    const match = transform.match(/matrix\(([^)]+)\)/);
+    if (match) {
+      const matrixValues = match[1].split(',').map(parseFloat);
+
+      // Allow a tolerance of 0.01 for floating point differences
+      const tolerance = 0.01;
+      expect(matrixValues[0]).to.be.closeTo(a, tolerance);
+      expect(matrixValues[1]).to.be.closeTo(b, tolerance);
+      expect(matrixValues[2]).to.be.closeTo(c, tolerance);
+      expect(matrixValues[3]).to.be.closeTo(d, tolerance);
+    } else {
+      throw new Error('Transform matrix not found');
+    }
+  });
 }
-
-// Call the setClock function every second to update the hands
-setInterval(setClock, 1000);
-
-// Initialize the clock immediately
-setClock();
